@@ -1,106 +1,59 @@
-package phonebook;
+package programs.nate;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class Main {
+    private static final String DIR_PATH = "C:\\Users\\Admin\\Documents\\IntelliJ\\Phone Book\\directory.txt";
+    private static final String FIND_PATH = "C:\\Users\\Admin\\Documents\\IntelliJ\\Phone Book\\find.txt";
+
     public static void main(String[] args) {
-        long linearSearchTimeStart = System.currentTimeMillis();
-        List<Integer> phoneNumbers = new ArrayList<>();
-        List<String> names = new ArrayList<>();
+        long sortStartTime = System.currentTimeMillis();
+        List<String> listDir = createStream(DIR_PATH).map(str -> str.split(" ", 2)[1]).sorted().toList();
+        List<String> listFind = createStream(FIND_PATH).toList();
+        long sortEndTime = System.currentTimeMillis();
+        long duration = sortEndTime - sortStartTime;
 
-        try (Scanner directoryReader = new Scanner(new File("C:\\Users\\Admin\\Documents\\IntelliJ\\Phone Book\\directory.txt"))) {
-            while (directoryReader.hasNextLine()) {
-                phoneNumbers.add(directoryReader.nextInt());
-                names.add(directoryReader.nextLine().trim());
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("File \"directory\" not found");
-        }
-
-        // Sorting
-        long sortTimeStart = System.currentTimeMillis();
-        Collections.sort(names);
-        long sortTimeEnd = System.currentTimeMillis();
-
-
-
-        // Linear search
-        int namesFound = 0;
-        int queriedNames = 0;
-        try (Scanner findReader = new Scanner(new File("C:\\Users\\Admin\\Documents\\IntelliJ\\Phone Book\\find.txt"))) {
-            while (findReader.hasNextLine()) {
-                queriedNames++;
-                if (names.contains(findReader.nextLine())) {
-                    namesFound++;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("File \"find\" not found");
-        }
-        long linearSearchTimeEnd = System.currentTimeMillis();
-
-
+        //Linear search
+        System.out.println("Starting search (linear search): ");
+        long linearStartTime = System.currentTimeMillis();
+        long namesFound = listFind.stream().filter(listDir::contains).count();
+        long linearEndTime = System.currentTimeMillis();
+        System.out.printf("Found %d / %d entries.\n", namesFound, listDir.size());
+        printTime("Time taken", linearStartTime, linearEndTime);
+        System.out.println();
 
         //Binary search
-        long binarySearchTimeStart = System.currentTimeMillis();
-        try (Scanner findReader = new Scanner(new File("C:\\Users\\Admin\\Documents\\IntelliJ\\Phone Book\\find.txt"))) {
-            List<String> namesToFind = new ArrayList<>();
-            while (findReader.hasNextLine()) {
-                namesToFind.add(findReader.nextLine());
-            }
-            Collections.sort(namesToFind);
+        System.out.println("Start searching (binary sort)");
+        long binaryStartTime = System.currentTimeMillis();
+        List<Integer> indexes = listFind.stream().map(s -> Collections.binarySearch(listDir, s)).toList();
+        long binaryEndTime = System.currentTimeMillis();
+        System.out.println("Found " + indexes.size() + " / " + listDir.size() + " entries. ");
+        printTime("Sorting Time", sortStartTime, sortEndTime);
+        printTime("Time taken", binaryStartTime, binaryEndTime);
+    }
 
-            List<Integer> indexList = new ArrayList<>();
-            for (String s : namesToFind) {
-                int index = Collections.binarySearch(names, s);
-                indexList.add(index);
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("File \"find\" not found");
+    public static void printTime(String prefix, long startTime, long endTime) {
+        long duration = endTime - startTime;
+        long milliseconds = duration % 1000;
+        duration /= 1000;
+        long seconds = duration % 60;
+        duration /= 60;
+        long minutes = duration % 60;
+
+        System.out.printf(prefix + ": %d min. %d sec. %d ms.\n", minutes, seconds, milliseconds);
+    }
+
+    public static Stream<String> createStream(String str) {
+        try {
+            return Files.lines(Paths.get(str));
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException();
         }
-        long binarySearchTimeEnd = System.currentTimeMillis();
-
-
-
-//     Total time calculations with print
-        long totalTimeTakenLinear = linearSearchTimeEnd - linearSearchTimeStart;
-        long totalTimeMinutesLinear = TimeUnit.MILLISECONDS.toMinutes(totalTimeTakenLinear);
-        long totaTimeSecondsLinear = TimeUnit.MILLISECONDS.toSeconds(totalTimeTakenLinear);
-        long totalTimeMillisecondsLinear = totalTimeTakenLinear % 1000;
-
-////
-        // Sorting time calculations with print
-        long totalSortTime = sortTimeEnd - sortTimeStart;
-        long totalSortTimeMinutes = TimeUnit.MILLISECONDS.toMinutes(totalSortTime);
-        long totalSortTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(totalSortTime);
-        long totalSortTimeMilliseconds = totalSortTime % 1000;
-
-//
-        // Binary search time calculations with print
-        long binarySearchTimeTotal = binarySearchTimeEnd - binarySearchTimeStart;
-        long binarySearchTimeMinutes = TimeUnit.MILLISECONDS.toMinutes(binarySearchTimeTotal);
-        long binarySearchTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(binarySearchTimeTotal);
-        long binarySearchTimeMilliseconds = binarySearchTimeTotal % 1000;
-
-        // Total time taken (binary search)
-        long totalTimeMinutes = totalSortTimeMinutes + binarySearchTimeMinutes;
-        long totalTimeSeconds = totalSortTimeSeconds + binarySearchTimeSeconds;
-        long totalTimeMilliseconds = totalSortTimeMilliseconds + binarySearchTimeMilliseconds;
-
-
-
-        System.out.println("Starting search (linear search): ");
-        System.out.println("Found " + namesFound + " / " + queriedNames + " entries. ");
-        System.out.println("Time taken: " + totalTimeMinutes + " min. " + totaTimeSecondsLinear + " sec. " + totalTimeMillisecondsLinear + " ms.");
-        System.out.println();
-        System.out.println("Start searching (binary sort + jump search)");
-        System.out.println("Found " + namesFound + " / " + queriedNames + " entries. ");
-        System.out.println("Time taken: " + totalTimeMinutes + " min. " + totalTimeSeconds + " sec. " + totalTimeMilliseconds + " ms. ");
-        System.out.println("Sorting time: " + totalSortTimeMinutes  + " min. " + totalSortTimeSeconds + " sec. " + totalSortTimeMilliseconds + " ms.");
-        System.out.println("Searching time: " + binarySearchTimeMinutes + " min. " + binarySearchTimeSeconds + " sec. " + binarySearchTimeMilliseconds + " ms.");
     }
 }
 
