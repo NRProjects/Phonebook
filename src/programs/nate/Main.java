@@ -22,7 +22,7 @@ public class Main {
         long linearStartTime = System.currentTimeMillis();
         long namesFound = listFind.stream().filter(listDir::contains).count();
         long linearEndTime = System.currentTimeMillis();
-        System.out.printf("Found %d / %d entries.\n", namesFound, listDir.size());
+        System.out.printf("Found %d / %d entries.\n", namesFound, listFind.size());
         printTime("Time taken", linearStartTime, linearEndTime);
         System.out.println();
 
@@ -31,7 +31,8 @@ public class Main {
         long binaryStartTime = System.currentTimeMillis();
         List<Integer> indexes = listFind.stream().map(s -> Collections.binarySearch(listDir, s)).toList();
         long binaryEndTime = System.currentTimeMillis();
-        System.out.println("Found " + indexes.size() + " / " + listDir.size() + " entries. ");
+        System.out.println("Found " + indexes.size() + " / " + listFind.size() + " entries. ");
+        printTime("Time Taken", (sortStartTime + binaryStartTime), (sortEndTime + binaryEndTime));
         printTime("Sorting Time", sortStartTime, sortEndTime);
         printTime("Time taken", binaryStartTime, binaryEndTime);
     }
